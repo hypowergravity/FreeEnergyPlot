@@ -40,7 +40,7 @@ class FreeEnergyPlot:
         ax.plot([x for x in range(len(self.df_delta.index))], self.df_delta["TOTAL"], label='Total')
         plt.axhline(y=avg_y, color='red', linestyle='--', label='Average')
         plt.xticks(self.df_delta.index, self.frames, rotation=90)
-        plt.title(r'Energy component \Delta Total as a function of frames')
+        plt.title(r'Energy component $\Delta$ G Total as a function of frames')
         plt.xlabel('Frames')
         plt.ylabel('Energy (kcal/mol)')
         plt.legend()
