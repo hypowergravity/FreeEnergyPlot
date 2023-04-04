@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from MMPBSA_mods import API as MMPBSA_API
+from matplotlib.ticker import MaxNLocator
 
 
 class FreeEnergyPlot:
@@ -35,13 +36,15 @@ class FreeEnergyPlot:
 
     def plot_line(self):
         avg_y = np.mean(self.df_delta["TOTAL"])
-        plt.plot([x for x in range(len(self.df_delta.index))], self.df_delta["TOTAL"], label='Total')
+        fig, ax = plt.subplots()
+        ax.plot([x for x in range(len(self.df_delta.index))], self.df_delta["TOTAL"], label='Total')
         plt.axhline(y=avg_y, color='red', linestyle='--', label='Average')
         plt.xticks(self.df_delta.index, self.frames, rotation=90)
         plt.title(r'Energy component \Delta Total as a function of frames')
         plt.xlabel('Frames')
         plt.ylabel('Energy (kcal/mol)')
         plt.legend()
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
         plt.savefig("delta_energy_wrt_time.png", dpi=600)
         plt.close()
@@ -59,12 +62,13 @@ class FreeEnergyPlot:
         # set transparency and color for each individual bar
         for i, column in enumerate(data_frame.columns):
             ax.bar(column, data_frame[column].mean(), color='blue', alpha=0.8)
-
+        
         ax.errorbar(data_frame.columns, means, yerr=errors, fmt='none', capsize=3, ecolor='black')
         plt.title('Energy components with standard errors')
         plt.xlabel('Energy (kcal/mol)')
         plt.ylabel('Energy components')
         plt.xticks(data_frame.columns, list(data_frame.columns), rotation=90)
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
         plt.savefig(f"delta_energy_bar_plot_%s.png" % name, dpi=600)
         plt.close()
@@ -99,6 +103,7 @@ class FreeEnergyPlot:
         ax = sns.heatmap(self.df_total_decomposed_filtered, cmap='Spectral', annot=annot, fmt='.1f', linewidths=.5)
         ax.set_xticks(self.frames)
         ax.set_xticklabels(self.frames, rotation=90, ha="center", rotation_mode='anchor')
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.title('Per-residue energy decomposition plot')
         plt.xlabel('Frames')
         plt.ylabel('Residues')
@@ -113,6 +118,7 @@ class FreeEnergyPlot:
         plt.xlabel('Residue')
         plt.ylabel('Energy (kcal/mol)')
         plt.xticks(rotation=90, ha='center')
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
         plt.savefig(f"delta_energy_per-residue_barplot.png", dpi=600)
         plt.close()
