@@ -40,7 +40,7 @@ class FreeEnergyPlot:
         ax.plot([x for x in range(len(self.df_delta.index))], self.df_delta["TOTAL"], label='Total')
         plt.axhline(y=avg_y, color='red', linestyle='--', label='Average')
         plt.xticks(self.df_delta.index, self.frames, rotation=90)
-        plt.title(r'Energy component $\Delta$ G Total as a function of frames')
+        plt.title(r'Energy component $\Delta$G Total as a function of frames')
         plt.xlabel('Frames')
         plt.ylabel('Energy (kcal/mol)')
         plt.legend()
@@ -62,7 +62,7 @@ class FreeEnergyPlot:
         # set transparency and color for each individual bar
         for i, column in enumerate(data_frame.columns):
             ax.bar(column, data_frame[column].mean(), color='blue', alpha=0.8)
-        
+
         ax.errorbar(data_frame.columns, means, yerr=errors, fmt='none', capsize=3, ecolor='black')
         plt.title('Energy components with standard errors')
         plt.xlabel('Energy (kcal/mol)')
@@ -104,6 +104,19 @@ class FreeEnergyPlot:
         ax.set_xticks(self.frames)
         ax.set_xticklabels(self.frames, rotation=90, ha="center", rotation_mode='anchor')
         ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
+        # print(list(self.df_total_decomposed_filtered.index),len(list(self.df_total_decomposed_filtered.index)))
+        # y_ticks = plt.yticks()[0]
+        # print(y_ticks)
+        y_tick_labels =[int(tick) for tick in list(self.df_total_decomposed_filtered.index)]
+        ax.yaxis.set_major_locator(MaxNLocator())
+        #ax.set_yticks(list(self.df_total_decomposed_filtered.index))
+        ax.set_yticks(np.arange(len(y_tick_labels))+ 0.5)
+        ax.set_yticklabels(y_tick_labels, ha="center",minor=False)
+        plt.setp(ax.get_yticklabels(), rotation=0, ha="center", rotation_mode="anchor")
+        ax.tick_params(axis='y', which='major', pad=12)
+        ax.tick_params(axis='x', which='major', pad=12)
+        #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        # print(y_tick_labels,len(y_tick_labels))
         plt.title('Per-residue energy decomposition plot')
         plt.xlabel('Frames')
         plt.ylabel('Residues')
@@ -117,7 +130,12 @@ class FreeEnergyPlot:
         plt.title('Energy components Per Residue Decomposition')
         plt.xlabel('Residue')
         plt.ylabel('Energy (kcal/mol)')
-        plt.xticks(rotation=90, ha='center')
+        x_ticks = plt.xticks()[0]
+        x_tick_labels =[f"{int(tick)}" for tick in self.df_total_decomposed_filtered.index]
+        ax.set_xticklabels(x_tick_labels, ha="center", rotation_mode='anchor')
+        plt.xticks(x_ticks,x_tick_labels,rotation=90, ha='center')
+        ax.tick_params(axis='x', which='major', pad=12)
+
         #ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
         plt.savefig(f"delta_energy_per-residue_barplot.png", dpi=600)
