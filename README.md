@@ -63,9 +63,8 @@ EOF
 
 To prepare the parameter files for the MMGBSA calculation, you can use the `ante-MMPBSA.py` script. Here's an example command:
 
-```bash
+~~~bash
 ante-MMPBSA.py -p sanga1_protein.prmtop -c sanga1_protein.prmtop -r rec_wild.prmtop -l lig.prmtop --ligand-mask=:304
-
 ~~~
 
 Here, we have chosen the residue mask :304 for preparing the parameter file for free energy calculation.
