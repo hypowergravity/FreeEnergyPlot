@@ -72,8 +72,9 @@ class FreeEnergyPlot:
                 for j,y in enumerate(residue_list):
                         matrix[i, j] = self.data_value(self.df_total_decomposed_filtered,x,y)
             
-            pair_wise_plot = pd.DataFrame(matrix, index =residue_list, columns = residue_list)
-            self.heatmap(pair_wise_plot,True,name="pair-wise")
+            self.pair_wise_plot = pd.DataFrame(matrix, index =residue_list, columns = residue_list)
+            self.heatmap_pair_wise(self.pair_wise_plot,True,name="pair-wise")
+            self.heatmap_pair_wise(self.pair_wise_plot,False,name="pair-wise_1")
 
         else:
             self.heatmap(self.df_total_decomposed_filtered,True,"0")
@@ -177,7 +178,7 @@ class FreeEnergyPlot:
         ax = sns.heatmap(df, cmap='Spectral', annot=annot, fmt='.1f', linewidths=.5,xticklabels=1, yticklabels=1)
         ax.set_xticks(self.frames)
         ax.set_xticklabels(self.frames, rotation=90, ha="center", rotation_mode='anchor')
-        ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
+        # ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         # print(list(self.df_total_decomposed_filtered.index),len(list(self.df_total_decomposed_filtered.index)))
         # y_ticks = plt.yticks()[0]
         # print(y_ticks)
@@ -196,6 +197,33 @@ class FreeEnergyPlot:
         plt.ylabel('Residues')
         plt.tight_layout()
         plt.savefig(f"delta_energy_per-residue_heatmap_%s.png"%name, dpi=600)
+        plt.close()
+
+    def heatmap_pair_wise(self,df,annot=False,name=""):
+        fig, ax = plt.subplots()
+        # y_tick_labels =[int(tick) for tick in list(df.index)]
+        ax = sns.heatmap(df, cmap='Spectral', annot=annot, fmt='.1f', linewidths=.5,xticklabels=1, yticklabels=1)
+        # ax.set_xticks(y_tick_labels)
+        # ax.set_xticklabels(y_tick_labels, rotation=90, ha="center", rotation_mode='anchor')
+        # ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
+        # # print(list(self.df_total_decomposed_filtered.index),len(list(self.df_total_decomposed_filtered.index)))
+        # # y_ticks = plt.yticks()[0]
+        # # print(y_ticks)
+        # # y_tick_labels =[int(tick) for tick in list(df.index)]
+        # ax.yaxis.set_major_locator(MaxNLocator())
+        # #ax.set_yticks(list(self.df_total_decomposed_filtered.index))
+        # ax.set_yticks(np.arange(len(y_tick_labels))+ 0.5)
+        # ax.set_yticklabels(y_tick_labels, ha="center",minor=False)
+        # plt.setp(ax.get_yticklabels(), rotation=0, ha="center", rotation_mode="anchor")
+        # ax.tick_params(axis='y', which='major', pad=12)
+        # ax.tick_params(axis='x', which='major', pad=12)
+        #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        # print(y_tick_labels,len(y_tick_labels))
+        plt.title('Per-residue energy decomposition plot')
+        plt.xlabel('Residues')
+        plt.ylabel('Residues')
+        plt.tight_layout()
+        plt.savefig(f"delta_energy_residue_heatmap_%s.png"%name, dpi=600)
         plt.close()
 
     def per_residue_bar_plot(self,df,name=""):
