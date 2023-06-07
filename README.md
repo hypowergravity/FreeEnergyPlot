@@ -59,6 +59,31 @@ idecomp=2, dec_verbose=2,csv_format=1
 EOF
 
 ```
+
+> If normal mode has to be incorpurated it can be done using the following.
+
+```bash
+cat>>mmgbsa.in<<EOF>>
+Sample input file for GB
+
+&general
+  startframe=1,interval=1,endframe=5,keep_files=2,verbose=2
+/
+&gb
+igb=5, saltcon=0.150,
+/
+&decomp
+idecomp=2, dec_verbose=2,csv_format=1
+/
+&nmode
+   nmstartframe=1, nmendframe=5,
+   nminterval=1, nmode_igb=1, nmode_istrng=0.1,
+/
+
+EOF
+
+```
+
 ## Preparation of Parameter File
 
 To prepare the parameter files for the MMGBSA calculation, you can use the `ante-MMPBSA.py` script. Here's an example command:
