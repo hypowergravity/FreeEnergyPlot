@@ -25,6 +25,7 @@ class FreeEnergyPlot:
         self.df_delta = self.df_complex - self.df_receptor - self.df_ligand
         self.frames = [x + 1 for x in range(len(self.df_delta.index))]
         self.residues = residues
+        T_term,T_s_term,C_term,C_S_term=self.Entropy_term()
         
 
         self.plot_line()
@@ -73,13 +74,46 @@ class FreeEnergyPlot:
                         matrix[i, j] = self.data_value(self.df_total_decomposed_filtered,x,y)
             
             self.pair_wise_plot = pd.DataFrame(matrix, index =residue_list, columns = residue_list)
-            self.heatmap_pair_wise(self.pair_wise_plot,True,name="pair-wise")
-            self.heatmap_pair_wise(self.pair_wise_plot,False,name="pair-wise_1")
+            self.heatmap(pair_wise_plot,True,name="pair-wise")
 
         else:
             self.heatmap(self.df_total_decomposed_filtered,True,"0")
             self.heatmap(self.df_total_decomposed_filtered,False,"1")
             self.per_residue_bar_plot(self.df_total_decomposed_filtered)
+
+
+    def Entropy_term(self):
+        """ Estimation of the TΔS term as suggested by the paper
+        On the Use of Interaction Entropy and Related Methods to Estimate Binding Entropies
+        by Vilhelm Ekberg (PMC8389774)"""
+        R = 0.001987
+        temperature = 303.15
+        deltaE_IE = np.array(self.df_delta["EEL"] + self.df_delta["VDWAALS"])
+        const_factor = R * temperature
+
+        internal_energy_term = (deltaE_IE - deltaE_IE.mean())/const_factor
+        T_delta_S = const_factor  * np.log(np.array(np.exp(internal_energy_term)).mean())
+        T_delta_S_individual = const_factor  * np.log(np.array(np.exp(internal_energy_term)))
+        print(f"TΔS entropy term (Interaction Entropy) and its standard deviation \n "
+              f"estimated by method suggested by  Zhang and co-workers 2016;TΔS :{T_delta_S:.3f}, std : +/- {T_delta_S_individual.std():.3f} ")
+        
+        size = deltaE_IE.size
+        array_of_c2 = np.zeros(2000)
+        for i in range(2000):
+            idxs = np.random.randint(0, size, size)
+            ie_std = deltaE_IE[idxs].std()
+            c2data = (ie_std ** 2) / (2 * temperature * R)
+            array_of_c2[i] = c2data
+        c2_std = float(np.sort(array_of_c2)[100:1900].std())
+
+        print(f"TΔS entropy term (C2 - Interaction Entropy) and its standard deviation \n "
+              f"estimated by method suggested by  Minh and co-workers 2018 ;TΔS :{T_delta_S:.3f}, std : +/- {T_delta_S_individual:.3f} ")
+        return T_delta_S,T_delta_S_individual.std(),c2data,c2_std 
+
+
+
+
+
 
 
     def residue_wise_plot(self,residue):
@@ -178,7 +212,7 @@ class FreeEnergyPlot:
         ax = sns.heatmap(df, cmap='Spectral', annot=annot, fmt='.1f', linewidths=.5,xticklabels=1, yticklabels=1)
         ax.set_xticks(self.frames)
         ax.set_xticklabels(self.frames, rotation=90, ha="center", rotation_mode='anchor')
-        # ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         # print(list(self.df_total_decomposed_filtered.index),len(list(self.df_total_decomposed_filtered.index)))
         # y_ticks = plt.yticks()[0]
         # print(y_ticks)
@@ -197,33 +231,6 @@ class FreeEnergyPlot:
         plt.ylabel('Residues')
         plt.tight_layout()
         plt.savefig(f"delta_energy_per-residue_heatmap_%s.png"%name, dpi=600)
-        plt.close()
-
-    def heatmap_pair_wise(self,df,annot=False,name=""):
-        fig, ax = plt.subplots()
-        # y_tick_labels =[int(tick) for tick in list(df.index)]
-        ax = sns.heatmap(df, cmap='Spectral', annot=annot, fmt='.1f', linewidths=.5,xticklabels=1, yticklabels=1)
-        # ax.set_xticks(y_tick_labels)
-        # ax.set_xticklabels(y_tick_labels, rotation=90, ha="center", rotation_mode='anchor')
-        # ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
-        # # print(list(self.df_total_decomposed_filtered.index),len(list(self.df_total_decomposed_filtered.index)))
-        # # y_ticks = plt.yticks()[0]
-        # # print(y_ticks)
-        # # y_tick_labels =[int(tick) for tick in list(df.index)]
-        # ax.yaxis.set_major_locator(MaxNLocator())
-        # #ax.set_yticks(list(self.df_total_decomposed_filtered.index))
-        # ax.set_yticks(np.arange(len(y_tick_labels))+ 0.5)
-        # ax.set_yticklabels(y_tick_labels, ha="center",minor=False)
-        # plt.setp(ax.get_yticklabels(), rotation=0, ha="center", rotation_mode="anchor")
-        # ax.tick_params(axis='y', which='major', pad=12)
-        # ax.tick_params(axis='x', which='major', pad=12)
-        #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-        # print(y_tick_labels,len(y_tick_labels))
-        plt.title('Per-residue energy decomposition plot')
-        plt.xlabel('Residues')
-        plt.ylabel('Residues')
-        plt.tight_layout()
-        plt.savefig(f"delta_energy_residue_heatmap_%s.png"%name, dpi=600)
         plt.close()
 
     def per_residue_bar_plot(self,df,name=""):
