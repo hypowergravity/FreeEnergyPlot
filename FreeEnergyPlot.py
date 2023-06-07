@@ -74,7 +74,7 @@ class FreeEnergyPlot:
                         matrix[i, j] = self.data_value(self.df_total_decomposed_filtered,x,y)
             
             self.pair_wise_plot = pd.DataFrame(matrix, index =residue_list, columns = residue_list)
-            self.heatmap(pair_wise_plot,True,name="pair-wise")
+            self.heatmap(self.pair_wise_plot,True,name="pair-wise")
 
         else:
             self.heatmap(self.df_total_decomposed_filtered,True,"0")
@@ -96,6 +96,10 @@ class FreeEnergyPlot:
         T_delta_S_individual = const_factor  * np.log(np.array(np.exp(internal_energy_term)))
         print(f"TΔS entropy term (Interaction Entropy) and its standard deviation \n "
               f"estimated by method suggested by  Zhang and co-workers 2016;TΔS :{T_delta_S:.3f}, std : +/- {T_delta_S_individual.std():.3f} ")
+        with open("entropy.txt", "w") as file:
+            file.write(f"TΔS entropy term (Interaction Entropy) and its standard deviation\n"
+               f"estimated by method suggested by Zhang and co-workers 2016; TΔS: {T_delta_S:.3f}, std: +/- {T_delta_S_individual.std():.3f}")
+
         
         size = deltaE_IE.size
         array_of_c2 = np.zeros(2000)
@@ -107,13 +111,11 @@ class FreeEnergyPlot:
         c2_std = float(np.sort(array_of_c2)[100:1900].std())
 
         print(f"TΔS entropy term (C2 - Interaction Entropy) and its standard deviation \n "
-              f"estimated by method suggested by  Minh and co-workers 2018 ;TΔS :{T_delta_S:.3f}, std : +/- {T_delta_S_individual:.3f} ")
+              f"estimated by method suggested by  Minh and co-workers 2018 ;TΔS :{c2data:.3f}, std : +/- {c2_std :.3f}")
+        with open("entropy.txt", "a") as file:
+            file.write(f"TΔS entropy term (C2 - Interaction Entropy) and its standard deviation \n "
+              f"estimated by method suggested by  Minh and co-workers 2018 ;TΔS :{c2data:.3f}, std : +/- {c2_std :.3f}")
         return T_delta_S,T_delta_S_individual.std(),c2data,c2_std 
-
-
-
-
-
 
 
     def residue_wise_plot(self,residue):
