@@ -44,7 +44,7 @@ EOF
 > Simple input for MMGBSA calculation, the script(FreeEnergyPlot.py) was evaluated for the following, idecomp can be any values from 1-4.
 
 ```bash
-cat>>mmgbsa.in<<EOF>>
+cat>>mmgbsa.in<<EOF
 Sample input file for GB
 
 &general
@@ -63,7 +63,7 @@ EOF
 > If normal mode has to be incorpurated it can be done using the following.
 
 ```bash
-cat>>mmgbsa.in<<EOF>>
+cat>>mmgbsa.in<<EOF
 Sample input file for GB
 
 &general
