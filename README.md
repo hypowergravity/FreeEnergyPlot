@@ -115,3 +115,10 @@ For Pair-wise decomposition residue numnber also can be given, example:
 ~~~bash
 python FreeEnergyPlot.py -n 25 26 169 215 272 300
 ~~~
+
+If the residue name should also be plotted then the following like command has to be provided, where input prmtop and residue number corresponding to protein and ligand has to be given in amber naming syntax, example:
+
+~~~bash
+python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop -n 25 26 169 215 272 30
+~~~
+The '-n' which specify the residue number which has to be printed should be given in last.
