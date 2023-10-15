@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Script Name: FreeEnergyPlot.py
 Author: Sriram Srinivasa Raghavan (hypowergravity@gmail.com)
@@ -13,11 +14,13 @@ import seaborn as sns
 import numpy as np
 from MMPBSA_mods import API as MMPBSA_API
 from matplotlib.ticker import MaxNLocator
+import subprocess
+import matplotlib.ticker as ticker
 
 
 class FreeEnergyPlot:
     """This script generates a plot of the per-residue energy decomposition calculated by AMBER's MMPBSA.py tool using MMPBSA_API. MMPBSA.py is a module in the AMBER molecular dynamics simulation software suite used to estimate the free energy of protein-ligand binding. The per-residue energy decomposition breaks down the total binding energy into contributions from each amino acid residue in the protein. The resulting plot provides insight into the key residues involved in the binding interaction."""
-    def __init__(self,residues):
+    def __init__(self,residues,residue_list=None):
         self.data = MMPBSA_API.load_mmpbsa_info("_MMPBSA_info")
         self.df_complex = pd.DataFrame(self.data["gb"]["complex"])
         self.df_receptor = pd.DataFrame(self.data["gb"]["receptor"])
@@ -25,6 +28,7 @@ class FreeEnergyPlot:
         self.df_delta = self.df_complex - self.df_receptor - self.df_ligand
         self.frames = [x + 1 for x in range(len(self.df_delta.index))]
         self.residues = residues
+        self.residue_list= residue_list
         T_term,T_s_term,C_term,C_S_term=self.Entropy_term()
         
 
@@ -94,11 +98,14 @@ class FreeEnergyPlot:
         internal_energy_term = (deltaE_IE - deltaE_IE.mean())/const_factor
         T_delta_S = const_factor  * np.log(np.array(np.exp(internal_energy_term)).mean())
         T_delta_S_individual = const_factor  * np.log(np.array(np.exp(internal_energy_term)))
-        print(f"TΔS entropy term (Interaction Entropy) and its standard deviation \n "
-              f"estimated by method suggested by  Zhang and co-workers 2016;TΔS :{T_delta_S:.3f}, std : +/- {T_delta_S_individual.std():.3f} ")
+        str_1 = "T\u0394S entropy term (Interaction Entropy)"
+        str_2 = "and its standard deviation\n estimated by the method suggested by Zhang and co-workers 2016;"
+        str_3 = "T\u0394S: %.3f, std: +/- %.3f" % (T_delta_S, T_delta_S_individual.std())
+        template_file = str_1 + str_2 + str_3
+        print(template_file)
         with open("entropy.txt", "w") as file:
-            file.write(f"TΔS entropy term (Interaction Entropy) and its standard deviation\n"
-               f"estimated by method suggested by Zhang and co-workers 2016; TΔS: {T_delta_S:.3f}, std: +/- {T_delta_S_individual.std():.3f}")
+            file.write(template_file)
+
 
         
         size = deltaE_IE.size
@@ -109,12 +116,13 @@ class FreeEnergyPlot:
             c2data = (ie_std ** 2) / (2 * temperature * R)
             array_of_c2[i] = c2data
         c2_std = float(np.sort(array_of_c2)[100:1900].std())
-
-        print(f"TΔS entropy term (C2 - Interaction Entropy) and its standard deviation \n "
-              f"estimated by method suggested by  Minh and co-workers 2018 ;TΔS :{c2data:.3f}, std : +/- {c2_std :.3f}")
+        str_4 = "T\u0394S entropy term (C2 - Interaction Entropy) and its standard deviation \n"
+        str_5 = "estimated by method suggested by  Minh and co-workers 2018 ;"
+        str_6 = "T\u0394S: %.3f, std: +/- %.3f" % (c2data, c2_std)
+        template_file_2 = str_4 + str_5 + str_6
+        print(template_file_2)
         with open("entropy.txt", "a") as file:
-            file.write(f"TΔS entropy term (C2 - Interaction Entropy) and its standard deviation \n "
-              f"estimated by method suggested by  Minh and co-workers 2018 ;TΔS :{c2data:.3f}, std : +/- {c2_std :.3f}")
+            file.write(template_file_2)
         return T_delta_S,T_delta_S_individual.std(),c2data,c2_std 
 
 
@@ -126,9 +134,9 @@ class FreeEnergyPlot:
         df_filtered_lig_plot = pd.DataFrame({"Index":list(df_filtered_heat_plt.index),"Values":list(df_filtered_heat_plt.mean(axis=1))})
         df_filtered_lig_plot = df_filtered_lig_plot.set_index("Index")
         df_filtered_lig_plot = df_filtered_lig_plot[df_filtered_lig_plot.index !=residue]
-        self.heatmap(df_filtered_heat_plt,True,name=f"_%s"%residue)
-        self.heatmap(df_filtered_heat_plt,False,name=f"_f_%s"%residue)
-        self.per_residue_bar_plot(df_filtered_lig_plot,name=f"_%s"%residue)
+        self.heatmap(df_filtered_heat_plt,True,name="_%s"%residue)
+        self.heatmap(df_filtered_heat_plt,False,name="_f_%s"%residue)
+        self.per_residue_bar_plot(df_filtered_lig_plot,name="_%s"%residue)
         
     @staticmethod
     def data_value(df, i,j):
@@ -181,7 +189,7 @@ class FreeEnergyPlot:
         plt.xticks(data_frame.columns, list(data_frame.columns), rotation=90)
         #ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
-        plt.savefig(f"delta_energy_bar_plot_%s.png" % name, dpi=600)
+        plt.savefig("delta_energy_bar_plot_%s.png"%name, dpi=600)
         plt.close()
 
     def energy_decomposition(self, name):
@@ -205,34 +213,38 @@ class FreeEnergyPlot:
             df_decomp_total = pd.concat([df_decomp_total, data_frame(df_decomp, "tot", x)],
                                         axis=1)
 
-        df_decomp_total.columns = [f"frame_%s" % x for x in range(len(df_decomp_total.columns))]
+        df_decomp_total.columns = ["frame_%s" % x for x in range(len(df_decomp_total.columns))]
 
         return df_decomp_total
 
     def heatmap(self,df,annot=True,name=""):
         fig, ax = plt.subplots()
         ax = sns.heatmap(df, cmap='Spectral', annot=annot, fmt='.1f', linewidths=.5,xticklabels=1, yticklabels=1)
-        ax.set_xticks(self.frames)
-        ax.set_xticklabels(self.frames, rotation=90, ha="center", rotation_mode='anchor')
-        ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
-        # print(list(self.df_total_decomposed_filtered.index),len(list(self.df_total_decomposed_filtered.index)))
-        # y_ticks = plt.yticks()[0]
-        # print(y_ticks)
-        y_tick_labels =[int(tick) for tick in list(df.index)]
+        
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=len(self.frames)))
+
+        if self.residue_list is not None:
+            y_tick_labels =[int(tick) for tick in list(df.index)]
+            y_tick_labels_1 = list(self.residue_list[self.residue_list['Resn'].isin(y_tick_labels)].apply(lambda x: '{}-{}'.format(x[0],x[1]), axis=1))
+        else:    
+            y_tick_labels_1 =[int(tick) for tick in list(df.index)]
+
         ax.yaxis.set_major_locator(MaxNLocator())
         #ax.set_yticks(list(self.df_total_decomposed_filtered.index))
-        ax.set_yticks(np.arange(len(y_tick_labels))+ 0.5)
-        ax.set_yticklabels(y_tick_labels, ha="center",minor=False)
+        ax.set_yticks(np.arange(len(y_tick_labels_1))+ 0.5)
+        ax.set_yticklabels(y_tick_labels_1, ha="center",minor=False)
         plt.setp(ax.get_yticklabels(), rotation=0, ha="center", rotation_mode="anchor")
-        ax.tick_params(axis='y', which='major', pad=12)
-        ax.tick_params(axis='x', which='major', pad=12)
-        #ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-        # print(y_tick_labels,len(y_tick_labels))
+        ax.tick_params(axis='y', which='major', pad=20)
+        midpoints = [x+0.5 for x in range(len(self.frames))]
+        ax.set_xticks(midpoints)
+        
+        ax.set_xticklabels(self.frames, rotation=90)
+        ax.tick_params(axis='x', which='major', pad=10)
         plt.title('Per-residue energy decomposition plot')
         plt.xlabel('Frames')
         plt.ylabel('Residues')
         plt.tight_layout()
-        plt.savefig(f"delta_energy_per-residue_heatmap_%s.png"%name, dpi=600)
+        plt.savefig("delta_energy_per-residue_heatmap_%s.png"%name, dpi=600)
         plt.close()
 
     def per_residue_bar_plot(self,df,name=""):
@@ -242,14 +254,17 @@ class FreeEnergyPlot:
         plt.xlabel('Residue')
         plt.ylabel('Energy (kcal/mol)')
         x_ticks = plt.xticks()[0]
-        x_tick_labels =[f"{int(tick)}" for tick in df.index]
-        ax.set_xticklabels(x_tick_labels, ha="center", rotation_mode='anchor')
-        plt.xticks(x_ticks,x_tick_labels,rotation=90, ha='center')
-        ax.tick_params(axis='x', which='major', pad=12)
-
+        if self.residue_list is not None:
+            x_tick_labels =[int(tick) for tick in df.index]
+            x_tick_labels_1 = list(self.residue_list[self.residue_list['Resn'].isin(x_tick_labels)].apply(lambda x: '{}-{}'.format(x[0],x[1]), axis=1))
+        else:    
+            x_tick_labels_1 =["{int(tick)}" for tick in df.index]
+        ax.set_xticklabels(x_tick_labels_1, ha="center", rotation_mode='anchor')
+        plt.xticks(x_ticks,x_tick_labels_1,rotation=90, ha='center')
+        ax.tick_params(axis='x', which='major', pad=25)
         #ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
-        plt.savefig(f"delta_energy_per-residue_barplot%s.png"%name, dpi=600)
+        plt.savefig("delta_energy_per-residue_barplot%s.png"%name, dpi=600)
         plt.close()
 
 
@@ -258,22 +273,38 @@ def main():
     import argparse
     from datetime import datetime
     parser = argparse.ArgumentParser(prog='FreeEnergyPlot.py', formatter_class=argparse.RawTextHelpFormatter,
-                                     description=f"""This script analyse and plots per-residue/ pair-wise free energy decomposition using MMGBSA_API,
+                                     description="""This script analyse and plots per-residue/ pair-wise free energy decomposition using MMGBSA_API,
                                       \n for pair-wise decomposition, a list of residues can be given. 
                                       \n previous calculation of MMPBSA/MMGBSA has to be done previously, for details please refer Readme.MD file. 
                                       \n The script assumes the MMPB/GBSA is successful and the folder contains "_MMPBSA_info" file for ploting. 
+                                      \n if residue -r has to be given if the the residue name should also be plotted.
         Few example two run the code: \n\n
-        1. python FreeEnergyPlot.py  \n\n
-        2. python FreeEnergyPlot.py -n 25 26 169 215 272 300
+
+        1. python FreeEnergyPlot.py \n
+        2. python FreeEnergyPlot.py -n 25 26 169 215 272 300 \n
+        3. python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop -n 25 26 169 215 272 30 \n
+    
+        
 
     """)
+
+    parser.add_argument('-r',"--residuelist", action='store', type=str, help='the list of residue that are in the pdb as provided in prmtop file')
+    parser.add_argument('-p',"--prmtop",action='store', type=str, help='parmtop file for getting the label')
     parser.add_argument('-n',"--residue", metavar='N',action='store', type=int, nargs='+', help='a list of residues for \n for pair-wise decomposition by default lingand is choosen')
 
     args = parser.parse_args()
 
-    residues = [] if args.residue is None else args.residue            
+    residues = [] if args.residue is None else args.residue   
+    residuelist =  ":1-1000" if args.residuelist is None else args.residuelist
+    prmtop = None if args.prmtop is None else args.prmtop
     start = datetime.now()
-    FreeEnergyPlot(residues)  
+    if prmtop is not None and  prmtop.endswith(".prmtop"):
+        template = "cpptraj -p {prmtop} --resmask {residuelist} | awk 'BEGIN {{OFS=\",\"}} {{print $2,$1}}' > resilist.txt".format(prmtop=prmtop, residuelist=residuelist)
+        result = subprocess.run([template], shell=True)
+        residue_list = pd.read_csv("resilist.txt",names=["Resi","Resn"],skiprows=1)
+        FreeEnergyPlot(residues,residue_list)
+    else:
+        FreeEnergyPlot(residues)  
     print(datetime.now() - start)         
 
 if __name__ == '__main__':
