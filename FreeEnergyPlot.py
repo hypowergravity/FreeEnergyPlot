@@ -16,11 +16,18 @@ from MMPBSA_mods import API as MMPBSA_API
 from matplotlib.ticker import MaxNLocator
 import subprocess
 import matplotlib.ticker as ticker
+from matplotlib.ticker import ScalarFormatter
+import matplotlib
+matplotlib.use('Agg')
+font = {'weight': 'bold','family':'sans-serif','sans-serif':['Helvetica']}
+
+matplotlib.rc('font', **font)
+
 
 
 class FreeEnergyPlot:
     """This script generates a plot of the per-residue energy decomposition calculated by AMBER's MMPBSA.py tool using MMPBSA_API. MMPBSA.py is a module in the AMBER molecular dynamics simulation software suite used to estimate the free energy of protein-ligand binding. The per-residue energy decomposition breaks down the total binding energy into contributions from each amino acid residue in the protein. The resulting plot provides insight into the key residues involved in the binding interaction."""
-    def __init__(self,residues,residue_list=None):
+    def __init__(self,residues,residue_list=None,shift=0):
         self.data = MMPBSA_API.load_mmpbsa_info("_MMPBSA_info")
         self.df_complex = pd.DataFrame(self.data["gb"]["complex"])
         self.df_receptor = pd.DataFrame(self.data["gb"]["receptor"])
@@ -29,6 +36,7 @@ class FreeEnergyPlot:
         self.frames = [x + 1 for x in range(len(self.df_delta.index))]
         self.residues = residues
         self.residue_list= residue_list
+        self.shift = shift
         T_term,T_s_term,C_term,C_S_term=self.Entropy_term()
         
 
@@ -48,6 +56,7 @@ class FreeEnergyPlot:
             (self.delta_decomposed >= 0.5) | (
                     self.delta_decomposed <= -0.5)].dropna(how='all')
         self.df_total_decomposed_filtered = self.df_total_decomposed_filtered.fillna(value=0)
+        self.df_total_decomposed_filtered.index = self.df_total_decomposed_filtered.index + self.shift
 
         if "-" in str(self.df_total_decomposed_filtered.index[0]):
             self.decomposed_complex_update = self.Multi_index_set(self.decomposed_complex)
@@ -156,17 +165,30 @@ class FreeEnergyPlot:
     def plot_line(self):
         avg_y = np.mean(self.df_delta["TOTAL"])
         fig, ax = plt.subplots()
+
         ax.plot([x for x in range(len(self.df_delta.index))], self.df_delta["TOTAL"], label='Total')
-        plt.axhline(y=avg_y, color='red', linestyle='--', label='Average')
-        plt.xticks(self.df_delta.index, self.frames, rotation=90)
+        ax.axhline(y=avg_y, color='red', linestyle='--', label='Average')
+
+        ax.set_xticks(self.df_delta.index)        
+        ax.set_xticklabels(self.df_delta.index, rotation=90)
+        ax.set_xlim(min(self.df_delta.index), max(self.df_delta.index))
+        if len(self.frames) > 10 :
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=10, prune='lower'))
+            tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
+            tick_formatter.set_powerlimits((min(self.df_delta.index), max(self.df_delta.index)))
+            ax.xaxis.set_major_formatter(tick_formatter)
+        else:
+            ax.xaxis.set_major_locator(MaxNLocator( prune='lower'))
+                    
+
         plt.title(r'Energy component $\Delta$G Total as a function of frames')
         plt.xlabel('Frames')
         plt.ylabel('Energy (kcal/mol)')
         plt.legend()
-        ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
         plt.savefig("delta_energy_wrt_time.png", dpi=600)
         plt.close()
+
 
     def bar_plot(self, data_frame, name):
         means = data_frame.mean()
@@ -187,7 +209,6 @@ class FreeEnergyPlot:
         plt.xlabel('Energy (kcal/mol)')
         plt.ylabel('Energy components')
         plt.xticks(data_frame.columns, list(data_frame.columns), rotation=90)
-        #ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
         plt.savefig("delta_energy_bar_plot_%s.png"%name, dpi=600)
         plt.close()
@@ -219,32 +240,38 @@ class FreeEnergyPlot:
 
     def heatmap(self,df,annot=True,name=""):
         fig, ax = plt.subplots()
-        ax = sns.heatmap(df, cmap='Spectral', annot=annot, fmt='.1f', linewidths=.5,xticklabels=1, yticklabels=1)
-        
-        ax.xaxis.set_major_locator(MaxNLocator(nbins=len(self.frames)))
+        ax = sns.heatmap(df, cmap='Spectral', annot=annot, fmt='.1f', linewidths=.5, xticklabels=1, yticklabels=1)
 
         if self.residue_list is not None:
-            y_tick_labels =[int(tick) for tick in list(df.index)]
+            y_tick_labels = [int(tick) for tick in list(df.index)]
             y_tick_labels_1 = list(self.residue_list[self.residue_list['Resn'].isin(y_tick_labels)].apply(lambda x: '{}-{}'.format(x[0],x[1]), axis=1))
         else:    
-            y_tick_labels_1 =[int(tick) for tick in list(df.index)]
+            y_tick_labels_1 = [int(tick) for tick in list(df.index)]
 
         ax.yaxis.set_major_locator(MaxNLocator())
-        #ax.set_yticks(list(self.df_total_decomposed_filtered.index))
-        ax.set_yticks(np.arange(len(y_tick_labels_1))+ 0.5)
-        ax.set_yticklabels(y_tick_labels_1, ha="center",minor=False)
+        ax.set_yticks(np.arange(len(y_tick_labels_1)) + 0.5)
+        ax.set_yticklabels(y_tick_labels_1, ha="center", minor=False)
         plt.setp(ax.get_yticklabels(), rotation=0, ha="center", rotation_mode="anchor")
         ax.tick_params(axis='y', which='major', pad=20)
-        midpoints = [x+0.5 for x in range(len(self.frames))]
+
+        midpoints = [x + 0.5 for x in range(len(self.df_delta.index)-1)]
         ax.set_xticks(midpoints)
-        
-        ax.set_xticklabels(self.frames, rotation=90)
-        ax.tick_params(axis='x', which='major', pad=10)
+        ax.set_xticklabels(self.df_delta.index[:-1], rotation=90)
+        ax.tick_params(axis='x', which='major', pad=10)       
+        ax.set_xticklabels(self.df_delta.index, rotation=90)
+        ax.set_xlim(min(self.df_delta.index), max(self.df_delta.index))
+        if len(self.frames) > 10 :
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=10, prune='lower'))
+            tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
+            tick_formatter.set_powerlimits((min(self.df_delta.index), max(self.df_delta.index)))
+            ax.xaxis.set_major_formatter(tick_formatter)
+        else:
+            ax.xaxis.set_major_locator(MaxNLocator( prune='lower'))
         plt.title('Per-residue energy decomposition plot')
         plt.xlabel('Frames')
         plt.ylabel('Residues')
         plt.tight_layout()
-        plt.savefig("delta_energy_per-residue_heatmap_%s.png"%name, dpi=600)
+        plt.savefig("delta_energy_per-residue_heatmap_%s.png" % name, dpi=600)
         plt.close()
 
     def per_residue_bar_plot(self,df,name=""):
@@ -257,11 +284,13 @@ class FreeEnergyPlot:
         if self.residue_list is not None:
             x_tick_labels =[int(tick) for tick in df.index]
             x_tick_labels_1 = list(self.residue_list[self.residue_list['Resn'].isin(x_tick_labels)].apply(lambda x: '{}-{}'.format(x[0],x[1]), axis=1))
+            ax.tick_params(axis='x', which='major', pad=25)
         else:    
-            x_tick_labels_1 =["{int(tick)}" for tick in df.index]
+            x_tick_labels_1 =[int(tick) for tick in df.index]
+            ax.tick_params(axis='x', which='major', pad=5)
         ax.set_xticklabels(x_tick_labels_1, ha="center", rotation_mode='anchor')
         plt.xticks(x_ticks,x_tick_labels_1,rotation=90, ha='center')
-        ax.tick_params(axis='x', which='major', pad=25)
+        
         #ax.xaxis.set_major_locator(MaxNLocator(nbins=10))
         plt.tight_layout()
         plt.savefig("delta_energy_per-residue_barplot%s.png"%name, dpi=600)
@@ -291,20 +320,23 @@ def main():
     parser.add_argument('-r',"--residuelist", action='store', type=str, help='the list of residue that are in the pdb as provided in prmtop file')
     parser.add_argument('-p',"--prmtop",action='store', type=str, help='parmtop file for getting the label')
     parser.add_argument('-n',"--residue", metavar='N',action='store', type=int, nargs='+', help='a list of residues for \n for pair-wise decomposition by default lingand is choosen')
+    parser.add_argument('-s',"--shift",action='store', type=int, help='shift in number')
 
     args = parser.parse_args()
 
     residues = [] if args.residue is None else args.residue   
     residuelist =  ":1-1000" if args.residuelist is None else args.residuelist
     prmtop = None if args.prmtop is None else args.prmtop
+    shift = 0 if args.shift is None else args.shift
     start = datetime.now()
     if prmtop is not None and  prmtop.endswith(".prmtop"):
         template = "cpptraj -p {prmtop} --resmask {residuelist} | awk 'BEGIN {{OFS=\",\"}} {{print $2,$1}}' > resilist.txt".format(prmtop=prmtop, residuelist=residuelist)
         result = subprocess.run([template], shell=True)
         residue_list = pd.read_csv("resilist.txt",names=["Resi","Resn"],skiprows=1)
-        FreeEnergyPlot(residues,residue_list)
+        residue_list["Resn"] = residue_list["Resn"].astype(int) + shift
+        FreeEnergyPlot(residues,residue_list,shift=shift)
     else:
-        FreeEnergyPlot(residues)  
+        FreeEnergyPlot(residues,shift=shift)  
     print(datetime.now() - start)         
 
 if __name__ == '__main__':
