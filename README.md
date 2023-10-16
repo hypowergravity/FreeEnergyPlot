@@ -119,6 +119,8 @@ python FreeEnergyPlot.py -n 25 26 169 215 272 300
 If the residue name should also be plotted then the following like command has to be provided, where input prmtop and residue number corresponding to protein and ligand has to be given in amber naming syntax, example:
 
 ~~~bash
-python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop -n 25 26 169 215 272 30
+python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop  -s 2 -n 25 26 169 215 272 300 
+python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop -n 25 26 169 215 272 300
 ~~~
+The -s option will shif the residue incase the number are different in pdb and prmtop
 The '-n' which specify the residue number which has to be printed should be given in last.
