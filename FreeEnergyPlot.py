@@ -170,15 +170,15 @@ class FreeEnergyPlot:
         ax.axhline(y=avg_y, color='red', linestyle='--', label='Average')
 
         ax.set_xticks(self.df_delta.index)        
-        ax.set_xticklabels(self.df_delta.index, rotation=90)
-        ax.set_xlim(min(self.df_delta.index), max(self.df_delta.index))
+        ax.set_xticklabels(self.frames, rotation=90)
+        ax.set_xlim(min(self.frames), max(self.frames))
         if len(self.frames) > 10 :
             ax.xaxis.set_major_locator(MaxNLocator(nbins=10, prune='lower'))
             tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
-            tick_formatter.set_powerlimits((min(self.df_delta.index), max(self.df_delta.index)))
+            tick_formatter.set_powerlimits((int(min(self.df_delta.index)), int(max(self.df_delta.index))))
             ax.xaxis.set_major_formatter(tick_formatter)
         else:
-            ax.xaxis.set_major_locator(MaxNLocator( prune='lower'))
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=len(self.frames), prune='lower'))
                     
 
         plt.title(r'Energy component $\Delta$G Total as a function of frames')
@@ -254,19 +254,21 @@ class FreeEnergyPlot:
         plt.setp(ax.get_yticklabels(), rotation=0, ha="center", rotation_mode="anchor")
         ax.tick_params(axis='y', which='major', pad=20)
 
-        midpoints = [x + 0.5 for x in range(len(self.df_delta.index)-1)]
-        ax.set_xticks(midpoints)
-        ax.set_xticklabels(self.df_delta.index[:-1], rotation=90)
+        # midpoints = [x + 0.5 for x in range(len(self.df_delta.index))]
+        ax.set_xticks(np.arange(len(self.df_delta.index)) + 0.5)
+        ax.set_xticklabels(self.frames, rotation=90,ha="center", minor=False)
         ax.tick_params(axis='x', which='major', pad=10)       
-        ax.set_xticklabels(self.df_delta.index, rotation=90)
-        ax.set_xlim(min(self.df_delta.index), max(self.df_delta.index))
+        ax.set_xlim(min(self.frames), max(self.frames))
         if len(self.frames) > 10 :
             ax.xaxis.set_major_locator(MaxNLocator(nbins=10, prune='lower'))
             tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
-            tick_formatter.set_powerlimits((min(self.df_delta.index), max(self.df_delta.index)))
+            tick_formatter.set_powerlimits((int(min(self.df_delta.index)), int(max(self.df_delta.index))))
             ax.xaxis.set_major_formatter(tick_formatter)
         else:
-            ax.xaxis.set_major_locator(MaxNLocator( prune='lower'))
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=len(self.frames), prune='lower'))
+        
+  
+
         plt.title('Per-residue energy decomposition plot')
         plt.xlabel('Frames')
         plt.ylabel('Residues')
