@@ -170,8 +170,8 @@ class FreeEnergyPlot:
         ax.axhline(y=avg_y, color='red', linestyle='--', label='Average')
 
         ax.set_xticks(self.df_delta.index)        
-        ax.set_xticklabels(self.frames, rotation=90)
-        ax.set_xlim(min(self.frames), max(self.frames))
+        ax.set_xticklabels([x+1 for x in self.df_delta.index], rotation=90)
+        ax.set_xlim(min(self.df_delta.index), max(self.df_delta.index))
         if len(self.frames) > 10 :
             ax.xaxis.set_major_locator(MaxNLocator(nbins=10, prune='lower'))
             tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
@@ -254,20 +254,20 @@ class FreeEnergyPlot:
         plt.setp(ax.get_yticklabels(), rotation=0, ha="center", rotation_mode="anchor")
         ax.tick_params(axis='y', which='major', pad=20)
 
-        # midpoints = [x + 0.5 for x in range(len(self.df_delta.index))]
-        ax.set_xticks(np.arange(len(self.df_delta.index)) + 0.5)
-        ax.set_xticklabels(self.frames, rotation=90,ha="center", minor=False)
-        ax.tick_params(axis='x', which='major', pad=10)       
-        ax.set_xlim(min(self.frames), max(self.frames))
+        X_ticks = [x+1 for x in range(len(df.columns))]
+        plt.xticks(np.arange(len(X_ticks))+0.5, X_ticks , rotation=90)
         if len(self.frames) > 10 :
             ax.xaxis.set_major_locator(MaxNLocator(nbins=10, prune='lower'))
             tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
-            tick_formatter.set_powerlimits((int(min(self.df_delta.index)), int(max(self.df_delta.index))))
+            tick_formatter.set_powerlimits((min(X_ticks),max(X_ticks)))
             ax.xaxis.set_major_formatter(tick_formatter)
         else:
-            ax.xaxis.set_major_locator(MaxNLocator(nbins=len(self.frames), prune='lower'))
-        
-  
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=max(X_ticks), prune='lower'))
+            tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
+
+
+
+
 
         plt.title('Per-residue energy decomposition plot')
         plt.xlabel('Frames')
