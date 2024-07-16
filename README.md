@@ -59,7 +59,27 @@ idecomp=2, dec_verbose=2,csv_format=1
 EOF
 
 ```
+In case PB also needs to be calculated we can add the following:
+```bash
+cat>>mmgbsa.in<<EOF
+Sample input file for GB
 
+&general
+  startframe=1,interval=1,endframe=5,keep_files=2,verbose=2
+/
+&gb
+igb=5, saltcon=0.150,
+/
+/
+&pb
+  istrng=0.100,
+/
+&decomp
+idecomp=2, dec_verbose=2,csv_format=1
+/
+EOF
+
+```
 > If normal mode has to be incorpurated it can be done using the following.
 
 ```bash
@@ -121,6 +141,8 @@ If the residue name should also be plotted then the following like command has t
 ~~~bash
 python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop  -s 2 -n 25 26 169 215 272 300 
 python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop -n 25 26 169 215 272 300
+python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop -n 25 26 169 215 272 300 --skip 371
 ~~~
 The -s option will shift the residue incase the number are different in pdb and prmtop
 The '-n' which specify the residue number which has to be printed should be given in last.
+The '--skip' can be used to skip a paticular residue in case if it is metal which can have energy way beyond the amino acid contribution
