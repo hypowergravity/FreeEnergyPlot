@@ -289,7 +289,8 @@ class FreeEnergyPlot:
             ax.xaxis.set_major_locator(MaxNLocator(
                 nbins=max(X_ticks), prune='lower'))
             tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
-
+            
+        ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%d'))
         plt.title('Per-residue energy decomposition plot')
         plt.xlabel('Frames')
         plt.ylabel('Residues')
