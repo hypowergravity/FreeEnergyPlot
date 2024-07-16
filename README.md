@@ -122,5 +122,5 @@ If the residue name should also be plotted then the following like command has t
 python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop  -s 2 -n 25 26 169 215 272 300 
 python FreeEnergyPlot.py -r ":1-304" -p sanga1_protein.prmtop -n 25 26 169 215 272 300
 ~~~
-The -s option will shif the residue incase the number are different in pdb and prmtop
+The -s option will shift the residue incase the number are different in pdb and prmtop
 The '-n' which specify the residue number which has to be printed should be given in last.
