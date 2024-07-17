@@ -16,6 +16,7 @@ import subprocess
 import matplotlib.ticker as ticker
 from matplotlib.ticker import ScalarFormatter
 import matplotlib
+import matplotlib.ticker as mtick
 matplotlib.use('Agg')
 font = {'weight': 'bold', 'family': 'sans-serif', 'sans-serif': ['Helvetica']}
 
@@ -289,7 +290,6 @@ class FreeEnergyPlot:
             ax.xaxis.set_major_locator(MaxNLocator(
                 nbins=max(X_ticks), prune='lower'))
             tick_formatter = ScalarFormatter(useOffset=True, useMathText=True)
-            
         ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%d'))
         plt.title('Per-residue energy decomposition plot')
         plt.xlabel('Frames')
